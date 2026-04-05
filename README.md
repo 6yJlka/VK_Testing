@@ -20,7 +20,7 @@ API:
 
 - Java 21
 - Docker Desktop
-- `grpcurl` или Postman для проверки gRPC
+- `grpcurl` или Postman для тестирования gRPC
 
 ## Запуск Tarantool
 
@@ -49,6 +49,8 @@ docker compose down
 docker compose down -v
 ```
 
+Tarantool слушает порт `3301`.
+
 ## Запуск приложения
 
 Из корня проекта:
@@ -57,7 +59,7 @@ docker compose down -v
 .\gradlew.bat bootRun
 ```
 
-gRPC сервер поднимается на `localhost:9090`.
+gRPC сервер слушает порт `9090`.
 
 ## Тестирование через grpcurl
 
@@ -67,48 +69,50 @@ gRPC сервер поднимается на `localhost:9090`.
 src\main\proto
 ```
 
+Примеры ниже используют gRPC порт `9090`.
+
 ### Put
 
 ```cmd
-grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\",\"value\":\"aGVsbG8=\"}" localhost:9090 kv.v1.KeyValueService/Put
+grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\",\"value\":\"aGVsbG8=\"}" 127.0.0.1:9090 kv.v1.KeyValueService/Put
 ```
 
 ### Get
 
 ```cmd
-grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\"}" localhost:9090 kv.v1.KeyValueService/Get
+grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\"}" 127.0.0.1:9090 kv.v1.KeyValueService/Get
 ```
 
 ### Put с `null` value
 
 ```cmd
-grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"null-key\"}" localhost:9090 kv.v1.KeyValueService/Put
+grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"null-key\"}" 127.0.0.1:9090 kv.v1.KeyValueService/Put
 ```
 
 ### Count
 
 ```cmd
-grpcurl -emit-defaults -plaintext -import-path src\main\proto -proto kv.proto -d "{}" localhost:9090 kv.v1.KeyValueService/Count
+grpcurl -emit-defaults -plaintext -import-path src\main\proto -proto kv.proto -d "{}" 127.0.0.1:9090 kv.v1.KeyValueService/Count
 ```
 
 ### Range
 
 ```cmd
-grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"keyFrom\":\"a\",\"keyTo\":\"z\"}" localhost:9090 kv.v1.KeyValueService/Range
+grpcurl -plaintext -import-path src\main\proto -proto kv.proto -d "{\"keyFrom\":\"a\",\"keyTo\":\"z\"}" 127.0.0.1:9090 kv.v1.KeyValueService/Range
 ```
 
 ### Delete
 
 ```cmd
-grpcurl -emit-defaults -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\"}" localhost:9090 kv.v1.KeyValueService/Delete
+grpcurl -emit-defaults -plaintext -import-path src\main\proto -proto kv.proto -d "{\"key\":\"a\"}" 127.0.0.1:9090 kv.v1.KeyValueService/Delete
 ```
 
 ## Тестирование через Postman
 
-Можно использовать Postman вместо `grpcurl`.
+Вместо `grpcurl` можно использовать Postman.
 
 Порядок:
-- создать `gRPC` request на `localhost:9090`
+- создать `gRPC` request на порт `9090`
 - импортировать `src\main\proto\kv.proto`
 - выбрать метод `kv.v1.KeyValueService/...`
 - отправлять те же JSON-сообщения, что и в примерах выше
@@ -122,5 +126,5 @@ grpcurl -emit-defaults -plaintext -import-path src\main\proto -proto kv.proto -d
 ## Примечания
 
 - `bytes` в `grpcurl` передаются как base64.
-- Для `proto3` поля со значением по умолчанию могут не отображаться в ответе. Для явного вывода используйте `-emit-defaults`.
+- В `proto3` поля со значениями по умолчанию могут не отображаться в ответе. Для явного вывода используйте `-emit-defaults`.
 - `range` реализован как server-streaming gRPC метод.
