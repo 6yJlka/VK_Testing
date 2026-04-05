@@ -1,0 +1,19 @@
+services:
+  tarantool:
+    image: tarantool/tarantool:3.2
+    container_name: vk-testing-tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - ./docker/tarantool/init.lua:/opt/tarantool/init.lua:ro
+      - tarantool-data:/var/lib/tarantool
+    command: ["tarantool", "/opt/tarantool/init.lua"]
+    healthcheck:
+      test: ["CMD", "tarantool", "-e", "box.cfg{}; os.exit(box.info.status == 'running' and 0 or 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  tarantool-data:
