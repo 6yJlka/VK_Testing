@@ -29,6 +29,22 @@ class KeyValueGrpcServiceTest {
     private KeyValueGrpcService service;
 
     @Test
+    void putPassesProvidedValueToRepository() {
+        TestObserver<PutResponse> observer = new TestObserver<>();
+        byte[] value = "hello".getBytes();
+
+        service.put(PutRequest.newBuilder()
+                .setKey("alpha")
+                .setValue(ByteString.copyFrom(value))
+                .build(), observer);
+
+        verify(repository).put("alpha", value);
+        assertThat(observer.completed).isTrue();
+        assertThat(observer.error).isNull();
+        assertThat(observer.values).hasSize(1);
+    }
+
+    @Test
     void getReturnsFoundEntryWithNullValue() {
         when(repository.get("alpha")).thenReturn(Optional.of(new KeyValueEntry("alpha", null)));
 
@@ -43,6 +59,20 @@ class KeyValueGrpcServiceTest {
     }
 
     @Test
+    void getReturnsFoundEntryWithValue() {
+        when(repository.get("alpha")).thenReturn(Optional.of(new KeyValueEntry("alpha", "hello".getBytes())));
+
+        TestObserver<GetResponse> observer = new TestObserver<>();
+        service.get(GetRequest.newBuilder().setKey("alpha").build(), observer);
+
+        assertThat(observer.error).isNull();
+        assertThat(observer.values).hasSize(1);
+        GetResponse response = observer.values.getFirst();
+        assertThat(response.getFound()).isTrue();
+        assertThat(response.getValue()).isEqualTo(ByteString.copyFromUtf8("hello"));
+    }
+
+    @Test
     void putPassesNullWhenValueIsMissing() {
         TestObserver<PutResponse> observer = new TestObserver<>();
 
@@ -51,6 +81,32 @@ class KeyValueGrpcServiceTest {
         verify(repository).put("alpha", null);
         assertThat(observer.completed).isTrue();
         assertThat(observer.error).isNull();
+    }
+
+    @Test
+    void deleteReturnsDeletedFlagFromRepository() {
+        when(repository.delete("alpha")).thenReturn(true);
+
+        TestObserver<DeleteResponse> observer = new TestObserver<>();
+        service.delete(DeleteRequest.newBuilder().setKey("alpha").build(), observer);
+
+        assertThat(observer.error).isNull();
+        assertThat(observer.completed).isTrue();
+        assertThat(observer.values).hasSize(1);
+        assertThat(observer.values.getFirst().getDeleted()).isTrue();
+    }
+
+    @Test
+    void countReturnsRepositoryCount() {
+        when(repository.count()).thenReturn(42L);
+
+        TestObserver<CountResponse> observer = new TestObserver<>();
+        service.count(CountRequest.newBuilder().build(), observer);
+
+        assertThat(observer.error).isNull();
+        assertThat(observer.completed).isTrue();
+        assertThat(observer.values).hasSize(1);
+        assertThat(observer.values.getFirst().getCount()).isEqualTo(42L);
     }
 
     @Test
